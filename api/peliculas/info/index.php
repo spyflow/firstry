@@ -47,7 +47,7 @@ $sinopsisNode = $xpath->query('//p[contains(@class, "font-size-13")]/following-s
 $sinopsis = $sinopsisNode ? trim($sinopsisNode->textContent) : 'Sinopsis no disponible';
 
 // Generar la URL del póster
-$poster = "https://video.makatunga.uy/peliculas/poster/?file=$idGuiones.jpg";
+$poster = "https://www18.pelisplushd.to/poster/$idGuiones-thumb.jpg";
 
 // Preparar el resultado
 $resultado = [
