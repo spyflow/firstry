@@ -22,18 +22,24 @@ if ($tipo === 'serie') {
     $url = "https://www18.pelisplushd.to/{$tipo}/{$consulta}";
 }
 
-$ch = curl_init();
-curl_setopt($ch, CURLOPT_URL, $url);
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-$html = curl_exec($ch);
-
-if (curl_errno($ch)) {
-    echo json_encode(['error' => 'Error en cURL: ' . curl_error($ch)]);
-    curl_close($ch);
-    exit;
+function getWebContent($url) {
+    $options = [
+        'http' => [
+            'header' => [
+                "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36\r\n"
+            ]
+        ]
+    ];
+    $context = stream_context_create($options);
+    return file_get_contents($url, false, $context);
 }
 
-curl_close($ch);
+$html = getWebContent($url);
+
+if ($html === false) {
+    echo json_encode(['error' => 'Error al obtener el contenido de la web.']);
+    exit;
+}
 
 $debug = false;
 
@@ -56,7 +62,7 @@ function extractDomain($url) {
 function modifyUrl($url) {
     $domain = extractDomain($url);
     if ($domain === 'uqload.com') {
-        return 'https://api.makatunga.uy/api/proxy/?url=' . urlencode($url);
+        return 'https://peliculas.spyflow.link/redirect/?url=' . urlencode($url);
     }
     return $url;
 }
@@ -120,4 +126,3 @@ if ($debug) {
 header('Content-Type: application/json');
 echo json_encode($serversByLanguage);
 ?>
-
