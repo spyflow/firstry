@@ -49,7 +49,8 @@ function scrapePelisplus($query, $debug = false) {
         $softName = str_replace(['/pelicula/', '/serie/'], '', $link); // Eliminar el prefijo de la URL
 
         // Extraer la URL de la imagen de la carátula
-        $img = "test";
+        $img = $xpath->query(".//img", $result)->item(0);
+        $imgUrl = $img ? $img->getAttribute('src') : ''; // Usar la URL original
 
 
         $item = [
