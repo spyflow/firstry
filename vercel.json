@@ -1,6 +1,6 @@
 {
   "functions": {
-    "api/peliculas/catalogo/index.php": {
+    "api/peliculas/*/*.php": {
       "runtime": "vercel-php@0.7.2"
     }
   }
