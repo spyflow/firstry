@@ -50,7 +50,8 @@ function scrapePelisplus($query, $debug = false) {
 
         // Extraer la URL de la imagen de la carátula
         $img = $xpath->query(".//img", $result)->item(0);
-        $imgUrl = $img ? $img->getAttribute('src') : ''; // Usar la URL original
+        $imgUrl = $img ? "https://www18.pelisplushd.to/poster/" . $img->getAttribute('src') : ''; // Usar la URL original con el prefijo
+
 
 
         $item = [
