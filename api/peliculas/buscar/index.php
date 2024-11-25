@@ -52,10 +52,10 @@ function scrapePelisplus($query, $debug = false) {
         $softName = str_replace('/serie/', '', $softName); // Eliminar el prefijo de la URL
 
 
-        // Extraer la URL de la imagen de la carátula y modificarla
+        // Extraer la URL de la imagen de la carátula
         $img = $xpath->query(".//img", $result)->item(0);
-        $imgFilename = $img ? basename($img->getAttribute('src')) : ''; // Obtener solo el nombre del archivo
-        $imgUrl = $imgFilename ? "https://video.makatunga.uy/peliculas/poster/?file=" . $imgFilename : '';
+        $imgUrl = $img ? $img->getAttribute('src') : ''; // Usar la URL original
+
 
         $item = [
             'title' => trim($title),
