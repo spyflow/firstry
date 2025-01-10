@@ -8,11 +8,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     exit();
 }
 
+function getRandomUserAgent() {
+    $majorVersion = rand(100, 120); // Versión principal del navegador
+    $minorVersion = rand(0, 9); // Versión menor
+    $chromeVersion = rand(80, 120); // Versión de Chrome
+    $webkitVersion = rand(500, 600); // Versión de WebKit
+    return "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/{$webkitVersion}.{$minorVersion} (KHTML, like Gecko) Chrome/{$chromeVersion}.0.0.0 Safari/{$webkitVersion}.{$minorVersion}";
+}
+
 function getWebContent($url) {
+    $randomUserAgent = getRandomUserAgent();
     $options = [
         'http' => [
             'header' => [
-                "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36\r\n"
+                "User-Agent: $randomUserAgent\r\n",
+                "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8\r\n",
+                "Accept-Language: en-US,en;q=0.5\r\n",
+                "Connection: keep-alive\r\n"
             ]
         ]
     ];
@@ -51,8 +63,6 @@ function scrapePelisplus($query, $debug = false) {
         // Extraer la URL de la imagen de la carátula
         $img = $xpath->query(".//img", $result)->item(0);
         $imgUrl = $img ? "https://www18.pelisplushd.to" . $img->getAttribute('src') : ''; // Usar la URL original con el prefijo
-
-
 
         $item = [
             'title' => trim($title),
