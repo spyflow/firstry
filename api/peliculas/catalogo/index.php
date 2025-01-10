@@ -8,34 +8,36 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     exit();
 }
 
-function getRandomUserAgent() {
-    $majorVersion = rand(100, 120); // Versión principal del navegador
-    $minorVersion = rand(0, 9); // Versión menor
-    $chromeVersion = rand(80, 120); // Versión de Chrome
-    $webkitVersion = rand(500, 600); // Versión de WebKit
-    return "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/{$webkitVersion}.{$minorVersion} (KHTML, like Gecko) Chrome/{$chromeVersion}.0.0.0 Safari/{$webkitVersion}.{$minorVersion}";
-}
-
 function getWebContent($url) {
-    $randomUserAgent = getRandomUserAgent();
-    $options = [
-        'http' => [
-            'header' => [
-                "User-Agent: $randomUserAgent\r\n",
-                "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8\r\n",
-                "Accept-Language: en-US,en;q=0.5\r\n",
-                "Connection: keep-alive\r\n"
-            ]
-        ]
+    // Obtener la API Key desde las variables de entorno
+    $apiKey = getenv('JEY_API_KEY');
+    $scraperApiUrl = 'https://api.scraperapi.com/';
+
+    // Verificar si la API Key está configurada correctamente
+    if (!$apiKey) {
+        die("API Key no encontrada en las variables de entorno.");
+    }
+
+    // Construir la URL con parámetros para ScraperAPI
+    $params = [
+        'api_key' => $apiKey,
+        'url' => $url
     ];
-    $context = stream_context_create($options);
-    return file_get_contents($url, false, $context);
+    $fullUrl = $scraperApiUrl . '?' . http_build_query($params);
+
+    // Realizar la solicitud con file_get_contents
+    $response = file_get_contents($fullUrl);
+
+    if ($response === false) {
+        die("Error al realizar la solicitud.");
+    }
+
+    return $response;
 }
 
 function scrapePelisplus($query, $debug = false) {
     $baseUrl = "https://www18.pelisplushd.to";
-    $searchUrl = $baseUrl;
-    $html = getWebContent($searchUrl);
+    $html = getWebContent($baseUrl);
 
     if ($debug) {
         // Mostrar el HTML en crudo si debug está activo
