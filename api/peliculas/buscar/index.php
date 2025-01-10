@@ -11,15 +11,30 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 
 
 function getWebContent($url) {
-    $options = [
-        'http' => [
-            'header' => [
-                "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36\r\n"
-            ]
-        ]
+    // Obtener la API Key desde las variables de entorno
+    $apiKey = getenv('JEY_API_KEY');
+    $scraperApiUrl = 'https://api.scraperapi.com/';
+
+    // Verificar si la API Key está configurada correctamente
+    if (!$apiKey) {
+        die("API Key no encontrada en las variables de entorno.");
+    }
+
+    // Construir la URL con parámetros para ScraperAPI
+    $params = [
+        'api_key' => $apiKey,
+        'url' => $url
     ];
-    $context = stream_context_create($options);
-    return file_get_contents($url, false, $context);
+    $fullUrl = $scraperApiUrl . '?' . http_build_query($params);
+
+    // Realizar la solicitud con file_get_contents
+    $response = file_get_contents($fullUrl);
+
+    if ($response === false) {
+        die("Error al realizar la solicitud.");
+    }
+
+    return $response;
 }
 
 function scrapePelisplus($query, $debug = false) {
