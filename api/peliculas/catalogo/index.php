@@ -16,23 +16,18 @@ function getWebContent($url) {
         responseJson(['error' => 'API Key no configurada'], 500);
     }
 
-    $ch = curl_init();
-    curl_setopt_array($ch, [
-        CURLOPT_URL => $scraperApiUrl,
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_TIMEOUT => 10,
-        CURLOPT_FAILONERROR => true,
-        CURLOPT_SSL_VERIFYPEER => false,
+    $context = stream_context_create([
+        'http' => [
+            'method' => 'GET',
+            'timeout' => 10,
+            'header' => "User-Agent: Mozilla/5.0 (compatible; Bot/1.0)\r\n"
+        ]
     ]);
 
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $curlError = curl_error($ch);
-    curl_close($ch);
+    $response = @file_get_contents($scraperApiUrl, false, $context);
 
-    if ($httpCode !== 200 || !$response) {
-        responseJson(['error' => 'Error en la solicitud externa', 'details' => $curlError], 500);
+    if ($response === false) {
+        responseJson(['error' => 'Error al obtener datos de la API'], 500);
     }
 
     return $response;
