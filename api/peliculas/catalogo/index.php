@@ -27,7 +27,7 @@ function getWebContent($url) {
     $response = @file_get_contents($scraperApiUrl, false, $context);
 
     if ($response === false) {
-        responseJson(['error' => 'Error al obtener datos de la API'], 500);
+        responseJson(['error600' => 'Error al obtener datos de la API'], 200);
     }
 
     return $response;
