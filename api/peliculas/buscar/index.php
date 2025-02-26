@@ -1,37 +1,39 @@
 <?php
-header("Access-Control-Allow-Origin: *"); // Permite solicitudes desde cualquier dominio
-header("Access-Control-Allow-Methods: GET, POST, OPTIONS"); // Métodos permitidos
-header("Access-Control-Allow-Headers: Content-Type"); // Encabezados permitidos
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type");
 
 if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
-    header("HTTP/1.1 200 OK");
+    http_response_code(200);
     exit();
 }
 
-
-
 function getWebContent($url) {
-    // Obtener la API Key desde las variables de entorno
     $apiKey = getenv('JEY_API_KEY');
     $scraperApiUrl = 'https://api.scraperapi.com/';
 
-    // Verificar si la API Key está configurada correctamente
     if (!$apiKey) {
-        die("API Key no encontrada en las variables de entorno.");
+        responseJson(['error' => 'API Key no configurada'], 500);
     }
 
-    // Construir la URL con parámetros para ScraperAPI
     $params = [
         'api_key' => $apiKey,
         'url' => $url
     ];
     $fullUrl = $scraperApiUrl . '?' . http_build_query($params);
 
-    // Realizar la solicitud con file_get_contents
-    $response = file_get_contents($fullUrl);
+    $context = stream_context_create([
+        'http' => [
+            'method' => 'GET',
+            'timeout' => 10,
+            'header' => "User-Agent: Mozilla/5.0\r\n"
+        ]
+    ]);
+
+    $response = @file_get_contents($fullUrl, false, $context);
 
     if ($response === false) {
-        die("Error al realizar la solicitud.");
+        responseJson(['error' => 'Error al obtener datos de la API'], 500);
     }
 
     return $response;
@@ -43,61 +45,48 @@ function scrapePelisplus($query, $debug = false) {
     $html = getWebContent($searchUrl);
 
     if ($debug) {
-        // Mostrar el HTML en crudo si debug está activo
-        echo "<pre>";
-        echo htmlspecialchars($html);
-        echo "</pre>";
-        return;
+        responseJson(['html' => htmlentities($html)]);
     }
 
     $dom = new DOMDocument();
-    @$dom->loadHTML($html);
+    @$dom->loadHTML(mb_convert_encoding($html, 'HTML-ENTITIES', 'UTF-8'));
     $xpath = new DOMXPath($dom);
 
     $movies = [];
     $series = [];
 
-    // Busca todos los contenedores de resultados
-    $results = $xpath->query("//a[@class='Posters-link']");
+    foreach ($xpath->query("//a[contains(@class, 'Posters-link')]") as $result) {
+        $titleNode = $xpath->query(".//p", $result)->item(0);
+        $imgNode = $xpath->query(".//img", $result)->item(0);
 
-    foreach ($results as $result) {
-        $title = $xpath->query(".//p", $result)->item(0)->nodeValue;
+        $title = $titleNode ? trim($titleNode->nodeValue) : 'Sin título';
         $link = $result->getAttribute('href');
-        $softName = str_replace('/pelicula/', '', $link); // Eliminar el prefijo de la URL
-        $softName = str_replace('/serie/', '', $softName); // Eliminar el prefijo de la URL
+        $softName = str_replace(['/pelicula/', '/serie/'], '', $link);
 
+        // Asegurar URL absoluta
+        $imgUrl = $imgNode ? (strpos($imgNode->getAttribute('src'), 'http') === 0 ? $imgNode->getAttribute('src') : "https://www18.pelisplushd.to" . $imgNode->getAttribute('src')) : '';
 
-        // Extraer la URL de la imagen de la carátula
-        $img = $xpath->query(".//img", $result)->item(0);
-        $imgUrl = $img ? "https://www18.pelisplushd.to" . $img->getAttribute('src') : ''; // Usar la URL original con el prefijo
+        $item = ['title' => $title, 'soft-name' => $softName, 'poster' => $imgUrl];
 
-
-        $item = [
-            'title' => trim($title),
-            'soft-name' => $softName,
-            'poster' => $imgUrl, // Incluir la URL completa de la carátula
-        ];
-
-        // Clasificación de resultados
         if (stripos($link, '/pelicula/') !== false) {
             $movies[] = $item;
-        } else if (stripos($link, '/serie/') !== false) {
+        } elseif (stripos($link, '/serie/') !== false) {
             $series[] = $item;
         }
     }
 
-    return json_encode([
-        'movies' => $movies,
-        'series' => $series
-    ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+    responseJson(['movies' => $movies, 'series' => $series]);
 }
 
-// Obtener el parámetro de búsqueda 'q' de la URL
-$query = isset($_GET['q']) ? $_GET['q'] : ''; // Corrección del nombre del parámetro 'q'
-$debug = isset($_GET['debug']) ? filter_var($_GET['debug'], FILTER_VALIDATE_BOOLEAN) : false; // Control de debug
+function responseJson($data, $status = 200) {
+    http_response_code($status);
+    header('Content-Type: application/json');
+    echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+    exit();
+}
 
-header('Content-Type: application/json');
-echo scrapePelisplus($query, $debug);
+$query = isset($_GET['q']) ? $_GET['q'] : '';
+$debug = isset($_GET['debug']) ? filter_var($_GET['debug'], FILTER_VALIDATE_BOOLEAN) : false;
 
+scrapePelisplus($query, $debug);
 ?>
-
