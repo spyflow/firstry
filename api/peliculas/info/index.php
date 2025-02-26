@@ -1,7 +1,12 @@
 <?php
-header("Access-Control-Allow-Origin: *"); // Permite solicitudes desde cualquier dominio
-header("Access-Control-Allow-Methods: GET, POST, OPTIONS"); // Métodos permitidos
-header("Access-Control-Allow-Headers: Content-Type"); // Encabezados permitidos
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type");
+
+if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+    http_response_code(200);
+    exit();
+}
 
 // Recibir los parámetros de la URL
 $tipo = isset($_GET['type']) ? $_GET['type'] : 'pelicula';
@@ -9,73 +14,73 @@ $id = isset($_GET['title']) ? $_GET['title'] : '';
 
 if (!$id) {
     echo json_encode(['error' => 'Nombre de la serie o película no especificado']);
-    exit;
+    exit();
 }
 
+// Función para obtener contenido web con file_get_contents()
 function getWebContent($url) {
-    // Obtener la API Key desde las variables de entorno
     $apiKey = getenv('JEY_API_KEY');
     $scraperApiUrl = 'https://api.scraperapi.com/';
 
-    // Verificar si la API Key está configurada correctamente
     if (!$apiKey) {
-        die("API Key no encontrada en las variables de entorno.");
+        http_response_code(500);
+        echo json_encode(['error' => 'API Key no encontrada en las variables de entorno.']);
+        exit();
     }
 
-    // Construir la URL con parámetros para ScraperAPI
-    $params = [
-        'api_key' => $apiKey,
-        'url' => $url
-    ];
+    $params = ['api_key' => $apiKey, 'url' => $url];
     $fullUrl = $scraperApiUrl . '?' . http_build_query($params);
 
-    // Realizar la solicitud con file_get_contents
-    $response = file_get_contents($fullUrl);
+    $context = stream_context_create([
+        'http' => [
+            'method' => 'GET',
+            'timeout' => 10,
+            'header' => "User-Agent: Mozilla/5.0\r\n"
+        ]
+    ]);
+
+    $response = @file_get_contents($fullUrl, false, $context);
 
     if ($response === false) {
-        die("Error al realizar la solicitud.");
+        http_response_code(500);
+        echo json_encode(['error' => 'Error al realizar la solicitud.']);
+        exit();
     }
 
     return $response;
 }
-// Reemplazar espacios por guiones
+
+// Reemplazar espacios por guiones en el título
 $idGuiones = str_replace(' ', '-', strtolower($id));
 
 // Construir la URL de la serie o película
 $url = "https://www18.pelisplushd.to/$tipo/$idGuiones";
-
-// Obtener el contenido HTML de la página
 $html = getWebContent($url);
-if ($html === false) {
-    echo json_encode(['error' => 'No se pudo obtener el contenido de la página']);
-    exit;
-}
 
-// Crear un DOMDocument y cargar el HTML
+// Cargar el HTML en un DOMDocument
 $dom = new DOMDocument();
 libxml_use_internal_errors(true);
-$dom->loadHTML($html);
+$dom->loadHTML(mb_convert_encoding($html, 'HTML-ENTITIES', 'UTF-8'));
 libxml_clear_errors();
 
-// Crear un XPath para consultar el DOM
 $xpath = new DOMXPath($dom);
 
-// Obtener el título desde <h1>
+// Obtener título
 $tituloNode = $xpath->query('//h1[contains(@class, "m-b-5")]')->item(0);
 $titulo = $tituloNode ? trim($tituloNode->textContent) : 'Título no disponible';
 
-// Obtener el año desde el <div> con la clase "sectionDetail mb15"
-$anioNode = $xpath->query('//div[contains(@class, "sectionDetail mb15")]/span[text()="Fecha de estreno:"]/following-sibling::text()[1]')->item(0);
+// Obtener año
+$anioNode = $xpath->query('//div[contains(@class, "sectionDetail")]/span[contains(text(),"Fecha de estreno")]/following-sibling::node()')->item(0);
 $anio = $anioNode ? trim($anioNode->textContent) : 'Año no disponible';
 
-// Obtener la sinopsis desde el <p> y <div>
+// Obtener sinopsis
 $sinopsisNode = $xpath->query('//p[contains(@class, "font-size-13")]/following-sibling::div[contains(@class, "text-large")]')->item(0);
 $sinopsis = $sinopsisNode ? trim($sinopsisNode->textContent) : 'Sinopsis no disponible';
 
-// Generar la URL del póster
+// URL del póster
 $poster = "https://www18.pelisplushd.to/poster/$idGuiones-thumb.jpg";
 
-// Preparar el resultado
+// Preparar la respuesta manteniendo la estructura original
 $resultado = [
     'titulo' => $titulo,
     'anio' => $anio,
@@ -84,7 +89,7 @@ $resultado = [
 ];
 
 if ($tipo === 'serie') {
-    // Obtener todas las temporadas y sus respectivos capítulos
+    // Obtener temporadas y capítulos
     $temporadaNodes = $xpath->query('//a[contains(@href, "/temporada/")]');
     $temporadas = [];
 
@@ -101,7 +106,7 @@ if ($tipo === 'serie') {
         }
     }
 
-    // Añadir la información de temporadas y capítulos al resultado
+    // Añadir temporadas al resultado
     $resultado['temporadas'] = [];
     foreach ($temporadas as $temporada => $cantidadCapitulos) {
         $resultado['temporadas'][] = [
@@ -110,13 +115,10 @@ if ($tipo === 'serie') {
         ];
     }
 
-    // Añadir el número total de temporadas al resultado
     $resultado['total_temporadas'] = count($temporadas);
 }
 
-// Devolver el resultado como JSON
+// Enviar respuesta JSON sin cambiar la estructura original
 header('Content-Type: application/json');
-echo json_encode($resultado);
-
+echo json_encode($resultado, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 ?>
-
