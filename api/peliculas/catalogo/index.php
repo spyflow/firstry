@@ -3,6 +3,9 @@ header("Access-Control-Allow-Origin: *"); // Permite solicitudes desde cualquier
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS"); // Métodos permitidos
 header("Access-Control-Allow-Headers: Content-Type"); // Encabezados permitidos
 
+error_reporting(0); // Desactiva la notificación de errores
+ini_set('display_errors', 0); // Evita que se muestren en pantalla
+
 if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     header("HTTP/1.1 200 OK");
     exit();
