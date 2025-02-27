@@ -21,8 +21,7 @@ function getWebContent($url) {
     // Construir la URL con parámetros para ScraperAPI
     $params = [
         'api_key' => $apiKey,
-        'url' => $url,
-        'render' => "true"
+        'url' => $url
     ];
     $fullUrl = $scraperApiUrl . '?' . http_build_query($params);
 
