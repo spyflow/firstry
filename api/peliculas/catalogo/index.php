@@ -1,98 +1,48 @@
 <?php
-header("Access-Control-Allow-Origin: *"); // Permite solicitudes desde cualquier dominio
-header("Access-Control-Allow-Methods: GET, POST, OPTIONS"); // Métodos permitidos
-header("Access-Control-Allow-Headers: Content-Type"); // Encabezados permitidos
 
-error_reporting(0); // Desactiva la notificación de errores
-ini_set('display_errors', 0); // Evita que se muestren en pantalla
+function getGeminiResponse() {
+    $apiKey = getenv("GEMINI"); // Obtener la API Key desde variables de entorno en Vercel
+    $url = "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=" . $apiKey;
 
-if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
-    header("HTTP/1.1 200 OK");
-    exit();
-}
-
-function getWebContent($url) {
-    // Obtener la API Key desde las variables de entorno
-    $apiKey = getenv('JEY_API_KEY');
-    $scraperApiUrl = 'https://api.scraperapi.com/';
-
-    // Verificar si la API Key está configurada correctamente
-    if (!$apiKey) {
-        die("API Key no encontrada en las variables de entorno.");
-    }
-
-    // Construir la URL con parámetros para ScraperAPI
-    $params = [
-        'api_key' => $apiKey,
-        'url' => $url
+    $data = [
+        "model" => "gemini-2.0-flash",
+        "systemInstruction" => "Después de recibir el mensaje 'A', genera una página HTML completa con CSS y JavaScript incluidos. 
+        La página debe ser totalmente aleatoria y seguir los principios de 'Clean Code'. No debes pedir más información, solo responde con el código.",
+        "generationConfig" => [
+            "temperature" => 1,
+            "topP" => 0.95,
+            "topK" => 40,
+            "maxOutputTokens" => 8192,
+            "responseMimeType" => "text/plain"
+        ],
+        "history" => [
+            ["role" => "user", "parts" => [["text" => "A"]]]
+        ]
     ];
-    $fullUrl = $scraperApiUrl . '?' . http_build_query($params);
 
-    // Realizar la solicitud con file_get_contents
-    $response = file_get_contents($fullUrl);
+    $options = [
+        "http" => [
+            "header"  => "Content-Type: application/json\r\n",
+            "method"  => "POST",
+            "content" => json_encode($data)
+        ]
+    ];
 
-    if ($response === false) {
-        die("Error al realizar la solicitud.");
+    $context  = stream_context_create($options);
+    $response = file_get_contents($url, false, $context);
+
+    if ($response === FALSE) {
+        return "<h1>Error al obtener respuesta de la API.</h1>";
     }
 
-    return $response;
+    $responseData = json_decode($response, true);
+    
+    if (isset($responseData["candidates"][0]["content"]["parts"][0]["text"])) {
+        return $responseData["candidates"][0]["content"]["parts"][0]["text"];
+    }
+
+    return "<h1>No se recibió una respuesta válida de la API.</h1>";
 }
 
-function scrapePelisplus($query, $debug = false) {
-    $baseUrl = "https://www18.pelisplushd.to";
-    $html = getWebContent($baseUrl);
-
-    if ($debug) {
-        // Mostrar el HTML en crudo si debug está activo
-        echo "<pre>";
-        echo htmlspecialchars($html);
-        echo "</pre>";
-        return;
-    }
-
-    $dom = new DOMDocument();
-    @$dom->loadHTML($html);
-    $xpath = new DOMXPath($dom);
-
-    $movies = [];
-    $series = [];
-
-    // Busca todos los contenedores de resultados
-    $results = $xpath->query("//a[@class='Posters-link']");
-
-    foreach ($results as $result) {
-        $title = $xpath->query(".//p", $result)->item(0)->nodeValue;
-        $link = $result->getAttribute('href');
-        $softName = str_replace(['/pelicula/', '/serie/'], '', $link); // Eliminar el prefijo de la URL
-
-        // Extraer la URL de la imagen de la carátula
-        $img = $xpath->query(".//img", $result)->item(0);
-        $imgUrl = $img ? "https://www18.pelisplushd.to" . $img->getAttribute('src') : ''; // Usar la URL original con el prefijo
-
-        $item = [
-            'title' => trim($title),
-            'soft-name' => $softName,
-            'poster' => $imgUrl, // Incluir la URL modificada de la carátula
-        ];
-
-        // Clasificación de resultados
-        if (stripos($link, '/pelicula/') !== false) {
-            $movies[] = $item;
-        } else if (stripos($link, '/serie/') !== false) {
-            $series[] = $item;
-        }
-    }
-
-    return json_encode([
-        'movies' => $movies,
-        'series' => $series
-    ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-}
-
-// Obtener el parámetro de búsqueda 'q' de la URL
-$query = "";
-$debug = isset($_GET['debug']) ? filter_var($_GET['debug'], FILTER_VALIDATE_BOOLEAN) : false; // Control de debug
-
-header('Content-Type: application/json');
-echo scrapePelisplus($query, $debug);
-?>
+// Generar la respuesta de la IA y mostrarla como HTML
+echo getGeminiResponse();
