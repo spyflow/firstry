@@ -70,7 +70,7 @@ function extractDomain($url) {
 }
 
 function modifyUrl($url) {
-    return (extractDomain($url) === 'uqload.com') ? 'https://peliculas.spyflow.link/redirect/?url=' . urlencode($url) : $url;
+    return (extractDomain($url) === 'uqload.com') ? 'https://peliculas.makatunga.uy/redirect/?url=' . urlencode($url) : $url;
 }
 
 if ($serverItems->length > 0) {
