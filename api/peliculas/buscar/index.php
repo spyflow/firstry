@@ -19,9 +19,11 @@ function getWebContent($url) {
         responseJson(['error' => 'API Key no configurada'], 500);
     }
 
+    // Añadir parámetro js para ejecutar JavaScript en la página
     $params = [
         'api_key' => $apiKey,
-        'url' => $url
+        'url' => $url,
+        'js' => 'true'  // Habilita la ejecución de JavaScript
     ];
     $fullUrl = $scraperApiUrl . '?' . http_build_query($params);
 
