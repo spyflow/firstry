@@ -1,7 +1,7 @@
 {
   "alerta": {
     "titulo": "Problemas con la API",
-    "descripcion": "Debido a inconvenientes técnicos, las funciones de búsqueda pueden no estar disponibles temporalmente. Nuestro equipo de expertos está trabajando de manera diligente y coordinada para solucionar el inconveniente a la mayor brevedad posible. Apreciamos su comprensión y paciencia.",
+    "descripcion": "Por inconvenientes técnicos, la búsqueda puede no estar disponible temporalmente. Nuestro equipo está trabajando para resolverlo lo antes posible. Agradecemos su comprensión y paciencia.",
     "fecha_inicio": "2025-03-18T08:42:00-03:00",
     "duracion": 144000,
     "tipo" : 3,
