@@ -1,5 +1,8 @@
 {
-  "mensaje": "Evento programado",
-  "fecha_inicio": "2025-03-18T14:00:00Z",
-  "duracion": 1440
+  "alerta": {
+    "titulo": "Problemas con la API",
+    "descripcion": "Debido a inconvenientes técnicos, las búsquedas no están disponibles en este momento. Nuestro equipo está trabajando para resolver el problema lo antes posible.",
+    "fecha_inicio": "2025-03-18T08:42:00-03:00",
+    "duracion": 240
+  }
 }
