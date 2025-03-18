@@ -1,10 +1,10 @@
 {
   "alerta": {
     "titulo": "Problemas con la API",
-    "descripcion": "Debido a inconvenientes técnicos, las búsquedas pueden no estar disponibles en este momento. Nuestro equipo está trabajando arduamente para resolver el problema lo antes posible.",
+    "descripcion": "Debido a inconvenientes técnicos, las funciones de búsqueda pueden no estar disponibles temporalmente. Nuestro equipo de expertos está trabajando de manera diligente y coordinada para solucionar el inconveniente a la mayor brevedad posible. Apreciamos su comprensión y paciencia.",
     "fecha_inicio": "2025-03-18T08:42:00-03:00",
-    "duracion": 2147483647,
+    "duracion": 144000,
     "tipo" : 3,
-    "uid": "d48d10c7-24e3-1546-9bb3-5145e83kb8b9"
+    "uid": "d48d10c7-24e3-1546-9bb3-5145e73kb8b9"
   }
 }
