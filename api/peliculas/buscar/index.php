@@ -80,6 +80,10 @@ function scrapePelisplus($query, $debug = false) {
         }
     }
 
+    // Invertir el orden de los elementos en las categorías de películas y series
+    $movies = array_reverse($movies);
+    $series = array_reverse($series);
+
     responseJson(['movies' => $movies, 'series' => $series]);
 }
 
