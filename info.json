@@ -1,14 +1,6 @@
 {
   "alerta": [
     {
-      "titulo": "Problemas con la API",
-      "descripcion": "Debido a inconvenientes técnicos, las funciones de búsqueda pueden no estar disponibles temporalmente. Nuestro equipo de expertos está trabajando de manera diligente y coordinada para solucionar el inconveniente a la mayor brevedad posible. Apreciamos su comprensión y paciencia.",
-      "fecha_inicio": "2025-03-18T08:42:00-03:00",
-      "duracion": 144000,
-      "tipo": 3,
-      "uid": "d48d10c7-24e3-1646-9bb3-5145e73kb8b9"
-    },
-    {
       "titulo": "Renovación de la interfaz de usuario",
       "descripcion": "Nos complace anunciar que hemos renovado completamente la interfaz de usuario de nuestro sitio web. Con un diseño más moderno y funcional, la nueva UI proporciona una experiencia más ágil e intuitiva para nuestros usuarios. Le invitamos a explorar las mejoras y disfrutar de una navegación más eficiente.",
       "fecha_inicio": "2025-03-18T09:00:00-03:00",
