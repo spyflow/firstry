@@ -72,7 +72,7 @@ if ($shouldUseCache) {
     }
 }
 
-$url = "https://www18.pelisplushd.to/$tipo/$idGuiones";
+$url = "https://ww4.pelisplushd.to/$tipo/$idGuiones";
 $html = getWebContent($url);
 
 // Cargar el HTML en un DOMDocument
