@@ -6,6 +6,8 @@ header("Access-Control-Allow-Headers: Content-Type");
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
+require_once dirname(__DIR__, 2) . '/lib/SupabaseCache.php';
+
 $tipo = $_GET['type'] ?? 'pelicula';
 $consulta = $_GET['title'] ?? '';
 
@@ -20,7 +22,27 @@ if ($tipo === 'serie') {
     $capitulo = $_GET['c'] ?? 1;
     $url = "https://www18.pelisplushd.to/{$tipo}/{$consulta}/temporada/{$temporada}/capitulo/{$capitulo}";
 } else {
+    $temporada = null;
+    $capitulo = null;
     $url = "https://www18.pelisplushd.to/{$tipo}/{$consulta}";
+}
+
+$cache = SupabaseCache::getInstance();
+$keyParts = ['servidor', $tipo, $consulta];
+if ($temporada !== null && $capitulo !== null) {
+    $keyParts[] = 't' . $temporada;
+    $keyParts[] = 'c' . $capitulo;
+}
+$cacheKey = SupabaseCache::buildKey(...$keyParts);
+$shouldUseCache = $cache->isEnabled();
+
+if ($shouldUseCache) {
+    $cached = $cache->get($cacheKey);
+    if ($cached !== null) {
+        header('Content-Type: application/json');
+        echo $cached;
+        exit;
+    }
 }
 
 function getWebContent($url) {
@@ -90,5 +112,11 @@ if ($serverItems->length > 0) {
     }
 }
 
+$json = json_encode($serversByLanguage, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+
+if ($shouldUseCache && $json !== false) {
+    $cache->set($cacheKey, $json, 3600); // 1 hora
+}
+
 header('Content-Type: application/json');
-echo json_encode($serversByLanguage);
+echo $json !== false ? $json : json_encode(['error' => 'No se pudo generar la respuesta']);
