@@ -14,33 +14,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 }
 
 function getWebContent($url) {
-    $apiKey = getenv('JEY_API_KEY');
-    $scraperApiUrl = 'https://api.scraperapi.com/';
-
-    if (!$apiKey) {
-        responseJson(['error' => 'API Key no configurada'], 500);
-    }
-
-    // Añadir parámetro js para ejecutar JavaScript en la página
-    $params = [
-        'api_key' => $apiKey,
-        'url' => $url,
-        'js' => 'true'  // Habilita la ejecución de JavaScript
-    ];
-    $fullUrl = $scraperApiUrl . '?' . http_build_query($params);
-
-    $context = stream_context_create([
-        'http' => [
-            'method' => 'GET',
-            'timeout' => 10,
-            'header' => "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36\r\n"
-        ]
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_TIMEOUT => 15,
+        CURLOPT_ENCODING => '',
+        CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+        CURLOPT_HTTPHEADER => [
+            'Accept-Language: es-ES,es;q=0.9,en;q=0.8'
+        ],
     ]);
 
-    $response = @file_get_contents($fullUrl, false, $context);
+    $response = curl_exec($ch);
+    $error = curl_error($ch);
+    $statusCode = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+    curl_close($ch);
 
-    if ($response === false) {
-        responseJson(['error' => 'Error al obtener datos de la API'], 500);
+    if ($response === false || $statusCode >= 400) {
+        responseJson(['error' => 'Error al obtener datos del sitio', 'detalle' => $error ?: $statusCode], 500);
     }
 
     return $response;
