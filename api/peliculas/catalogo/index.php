@@ -14,27 +14,27 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 }
 
 function getWebContent($url) {
-    // Obtener la API Key desde las variables de entorno
-    $apiKey = getenv('JEY_API_KEY');
-    $scraperApiUrl = 'https://api.scraperapi.com/';
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_TIMEOUT => 15,
+        CURLOPT_ENCODING => '',
+        CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+        CURLOPT_HTTPHEADER => [
+            'Accept-Language: es-ES,es;q=0.9,en;q=0.8'
+        ],
+    ]);
 
-    // Verificar si la API Key está configurada correctamente
-    if (!$apiKey) {
-        die("API Key no encontrada en las variables de entorno.");
-    }
+    $response = curl_exec($ch);
+    $error = curl_error($ch);
+    $statusCode = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+    curl_close($ch);
 
-    // Construir la URL con parámetros para ScraperAPI
-    $params = [
-        'api_key' => $apiKey,
-        'url' => $url
-    ];
-    $fullUrl = $scraperApiUrl . '?' . http_build_query($params);
-
-    // Realizar la solicitud con file_get_contents
-    $response = file_get_contents($fullUrl);
-
-    if ($response === false) {
-        die("Error al realizar la solicitud.");
+    if ($response === false || $statusCode >= 400) {
+        http_response_code(500);
+        echo json_encode(['error' => 'Error al obtener contenido del sitio', 'detalle' => $error ?: $statusCode]);
+        exit();
     }
 
     return $response;
