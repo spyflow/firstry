@@ -47,7 +47,7 @@ function getWebContent($url) {
 }
 
 function scrapePelisplus($query, $debug = false) {
-    $baseUrl = "https://www18.pelisplushd.to";
+    $baseUrl = "https://ww4.pelisplushd.to";
     $searchUrl = $baseUrl . "/search?s=" . urlencode($query);
     $html = getWebContent($searchUrl);
 
