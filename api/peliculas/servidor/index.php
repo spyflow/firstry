@@ -34,11 +34,12 @@ if ($temporada !== null && $capitulo !== null) {
     $keyParts[] = 'c' . $capitulo;
 }
 $cacheKey = SupabaseCache::buildKey(...$keyParts);
-$shouldUseCache = $cache->isEnabled();
+$cacheEnabled = $cache->isEnabled();
 
-if ($shouldUseCache) {
+if ($cacheEnabled) {
     $cached = $cache->get($cacheKey);
     if ($cached !== null) {
+        header('X-Cache: HIT');
         header('Content-Type: application/json');
         echo $cached;
         exit;
@@ -116,9 +117,10 @@ if ($serverItems->length > 0) {
 
 $json = json_encode($serversByLanguage, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
-if ($shouldUseCache && $json !== false) {
-    $cache->set($cacheKey, $json, 3600); // 1 hora
+if ($cacheEnabled && $json !== false) {
+    $cache->set($cacheKey, $json, 8640000); // 100 días
 }
 
+header('X-Cache: ' . ($cacheEnabled ? 'MISS' : 'BYPASS'));
 header('Content-Type: application/json');
 echo $json !== false ? $json : json_encode(['error' => 'No se pudo generar la respuesta']);
