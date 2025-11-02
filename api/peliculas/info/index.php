@@ -6,6 +6,8 @@ header("Access-Control-Allow-Headers: Content-Type");
 error_reporting(0); // Desactiva la notificación de errores
 ini_set('display_errors', 0); // Evita que se muestren en pantalla
 
+require_once dirname(__DIR__, 2) . '/lib/SupabaseCache.php';
+
 if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     http_response_code(200);
     exit();
@@ -57,6 +59,19 @@ function getWebContent($url) {
 $idGuiones = str_replace(' ', '-', strtolower($id));
 
 // Construir la URL de la serie o película
+$cache = SupabaseCache::getInstance();
+$cacheKey = SupabaseCache::buildKey('info', $tipo, $idGuiones);
+$shouldUseCache = $cache->isEnabled();
+
+if ($shouldUseCache) {
+    $cached = $cache->get($cacheKey);
+    if ($cached !== null) {
+        header('Content-Type: application/json');
+        echo $cached;
+        exit;
+    }
+}
+
 $url = "https://www18.pelisplushd.to/$tipo/$idGuiones";
 $html = getWebContent($url);
 
@@ -122,6 +137,12 @@ if ($tipo === 'serie') {
 }
 
 // Enviar respuesta JSON sin cambiar la estructura original
+$json = json_encode($resultado, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+
+if ($shouldUseCache && $json !== false) {
+    $cache->set($cacheKey, $json, 86400); // 24 horas
+}
+
 header('Content-Type: application/json');
-echo json_encode($resultado, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+echo $json !== false ? $json : json_encode(['error' => 'No se pudo generar la respuesta']);
 ?>

@@ -6,6 +6,8 @@ header("Access-Control-Allow-Headers: Content-Type");
 error_reporting(0); // Desactiva la notificación de errores
 ini_set('display_errors', 0); // Evita que se muestren en pantalla
 
+require_once dirname(__DIR__, 2) . '/lib/SupabaseCache.php';
+
 if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     http_response_code(200);
     exit();
@@ -50,7 +52,7 @@ function scrapePelisplus($query, $debug = false) {
     $html = getWebContent($searchUrl);
 
     if ($debug) {
-        responseJson(['html' => htmlentities($html)]);
+        return ['html' => htmlentities($html)];
     }
 
     $dom = new DOMDocument();
@@ -84,7 +86,7 @@ function scrapePelisplus($query, $debug = false) {
     $movies = array_reverse($movies);
     $series = array_reverse($series);
 
-    responseJson(['movies' => $movies, 'series' => $series]);
+    return ['movies' => $movies, 'series' => $series];
 }
 
 function responseJson($data, $status = 200) {
@@ -97,5 +99,26 @@ function responseJson($data, $status = 200) {
 $query = isset($_GET['q']) ? $_GET['q'] : '';
 $debug = isset($_GET['debug']) ? filter_var($_GET['debug'], FILTER_VALIDATE_BOOLEAN) : false;
 
-scrapePelisplus($query, $debug);
+$cache = SupabaseCache::getInstance();
+$shouldUseCache = !$debug && $cache->isEnabled();
+$cacheKey = SupabaseCache::buildKey('buscar', $query === '' ? 'empty' : $query);
+
+if ($shouldUseCache) {
+    $cached = $cache->get($cacheKey);
+    if ($cached !== null) {
+        header('Content-Type: application/json');
+        echo $cached;
+        exit;
+    }
+}
+
+$data = scrapePelisplus($query, $debug);
+$json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+
+if ($shouldUseCache && $json !== false) {
+    $cache->set($cacheKey, $json, 300); // 5 minutos
+}
+
+header('Content-Type: application/json');
+echo $json !== false ? $json : json_encode(['error' => 'No se pudo procesar la respuesta']);
 ?>

@@ -6,6 +6,8 @@ header("Access-Control-Allow-Headers: Content-Type"); // Encabezados permitidos
 error_reporting(0); // Desactiva la notificación de errores
 ini_set('display_errors', 0); // Evita que se muestren en pantalla
 
+require_once dirname(__DIR__, 2) . '/lib/SupabaseCache.php';
+
 if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     header("HTTP/1.1 200 OK");
     exit();
@@ -93,6 +95,25 @@ function scrapePelisplus($query, $debug = false) {
 $query = "";
 $debug = isset($_GET['debug']) ? filter_var($_GET['debug'], FILTER_VALIDATE_BOOLEAN) : false; // Control de debug
 
+$cache = SupabaseCache::getInstance();
+$shouldUseCache = !$debug && $cache->isEnabled();
+$cacheKey = SupabaseCache::buildKey('catalogo', $query === '' ? 'default' : $query);
+
+if ($shouldUseCache) {
+    $cached = $cache->get($cacheKey);
+    if ($cached !== null) {
+        header('Content-Type: application/json');
+        echo $cached;
+        exit;
+    }
+}
+
+$result = scrapePelisplus($query, $debug);
+
+if ($shouldUseCache && $result !== null) {
+    $cache->set($cacheKey, $result, 900); // 15 minutos
+}
+
 header('Content-Type: application/json');
-echo scrapePelisplus($query, $debug);
+echo $result;
 ?>
