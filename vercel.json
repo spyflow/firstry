@@ -3,5 +3,24 @@
     "api/peliculas/*/*.php": {
       "runtime": "vercel-php@0.7.3"
     }
-  }
+  },
+  "headers": [
+    {
+      "source": "/api/peliculas/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, s-maxage=8640000, stale-while-revalidate=86400"
+        },
+        {
+          "key": "CDN-Cache-Control",
+          "value": "public, max-age=8640000"
+        },
+        {
+          "key": "Vercel-CDN-Cache-Control",
+          "value": "public, max-age=8640000"
+        }
+      ]
+    }
+  ]
 }
