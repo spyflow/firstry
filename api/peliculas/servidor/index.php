@@ -20,11 +20,11 @@ if (empty($consulta)) {
 if ($tipo === 'serie') {
     $temporada = $_GET['t'] ?? 1;
     $capitulo = $_GET['c'] ?? 1;
-    $url = "https://www18.pelisplushd.to/{$tipo}/{$consulta}/temporada/{$temporada}/capitulo/{$capitulo}";
+    $url = "https://ww4.pelisplushd.to/{$tipo}/{$consulta}/temporada/{$temporada}/capitulo/{$capitulo}";
 } else {
     $temporada = null;
     $capitulo = null;
-    $url = "https://www18.pelisplushd.to/{$tipo}/{$consulta}";
+    $url = "https://ww4.pelisplushd.to/{$tipo}/{$consulta}";
 }
 
 $cache = SupabaseCache::getInstance();
