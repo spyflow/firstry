@@ -51,16 +51,27 @@ function getWebContent($url) {
 }
 
 // Reemplazar espacios por guiones en el título
-$idGuiones = str_replace(' ', '-', strtolower($id));
+$idGuiones = str_replace(
+    ' ',
+    '-',
+    (function (string $value): string {
+        $normalised = function_exists('mb_strtolower')
+            ? mb_strtolower($value, 'UTF-8')
+            : strtolower($value);
+
+        return $normalised;
+    })($id)
+);
 
 // Construir la URL de la serie o película
 $cache = SupabaseCache::getInstance();
 $cacheKey = SupabaseCache::buildKey('info', $tipo, $idGuiones);
-$shouldUseCache = $cache->isEnabled();
+$cacheEnabled = $cache->isEnabled();
 
-if ($shouldUseCache) {
+if ($cacheEnabled) {
     $cached = $cache->get($cacheKey);
     if ($cached !== null) {
+        header('X-Cache: HIT');
         header('Content-Type: application/json');
         echo $cached;
         exit;
@@ -134,10 +145,11 @@ if ($tipo === 'serie') {
 // Enviar respuesta JSON sin cambiar la estructura original
 $json = json_encode($resultado, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
-if ($shouldUseCache && $json !== false) {
-    $cache->set($cacheKey, $json, 86400); // 24 horas
+if ($cacheEnabled && $json !== false) {
+    $cache->set($cacheKey, $json, 8640000); // 100 días
 }
 
+header('X-Cache: ' . ($cacheEnabled ? 'MISS' : 'BYPASS'));
 header('Content-Type: application/json');
 echo $json !== false ? $json : json_encode(['error' => 'No se pudo generar la respuesta']);
 ?>

@@ -92,12 +92,13 @@ $query = isset($_GET['q']) ? $_GET['q'] : '';
 $debug = isset($_GET['debug']) ? filter_var($_GET['debug'], FILTER_VALIDATE_BOOLEAN) : false;
 
 $cache = SupabaseCache::getInstance();
-$shouldUseCache = !$debug && $cache->isEnabled();
+$cacheEnabled = $cache->isEnabled();
 $cacheKey = SupabaseCache::buildKey('buscar', $query === '' ? 'empty' : $query);
 
-if ($shouldUseCache) {
+if ($cacheEnabled) {
     $cached = $cache->get($cacheKey);
     if ($cached !== null) {
+        header('X-Cache: HIT');
         header('Content-Type: application/json');
         echo $cached;
         exit;
@@ -107,10 +108,11 @@ if ($shouldUseCache) {
 $data = scrapePelisplus($query, $debug);
 $json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
-if ($shouldUseCache && $json !== false) {
-    $cache->set($cacheKey, $json, 300); // 5 minutos
+if ($cacheEnabled && $json !== false) {
+    $cache->set($cacheKey, $json, 8640000); // 100 días
 }
 
+header('X-Cache: ' . ($cacheEnabled ? 'MISS' : 'BYPASS'));
 header('Content-Type: application/json');
 echo $json !== false ? $json : json_encode(['error' => 'No se pudo procesar la respuesta']);
 ?>

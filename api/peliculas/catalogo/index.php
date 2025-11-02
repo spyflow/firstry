@@ -96,12 +96,13 @@ $query = "";
 $debug = isset($_GET['debug']) ? filter_var($_GET['debug'], FILTER_VALIDATE_BOOLEAN) : false; // Control de debug
 
 $cache = SupabaseCache::getInstance();
-$shouldUseCache = !$debug && $cache->isEnabled();
+$cacheEnabled = $cache->isEnabled();
 $cacheKey = SupabaseCache::buildKey('catalogo', $query === '' ? 'default' : $query);
 
-if ($shouldUseCache) {
+if ($cacheEnabled) {
     $cached = $cache->get($cacheKey);
     if ($cached !== null) {
+        header('X-Cache: HIT');
         header('Content-Type: application/json');
         echo $cached;
         exit;
@@ -110,10 +111,11 @@ if ($shouldUseCache) {
 
 $result = scrapePelisplus($query, $debug);
 
-if ($shouldUseCache && $result !== null) {
-    $cache->set($cacheKey, $result, 900); // 15 minutos
+if ($cacheEnabled && $result !== null) {
+    $cache->set($cacheKey, $result, 8640000); // 100 días
 }
 
+header('X-Cache: ' . ($cacheEnabled ? 'MISS' : 'BYPASS'));
 header('Content-Type: application/json');
 echo $result;
 ?>

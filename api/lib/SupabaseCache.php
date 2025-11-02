@@ -54,7 +54,12 @@ class SupabaseCache
 
     public static function buildKey(string ...$parts): string
     {
-        $normalised = array_map(static fn ($part) => strtolower(trim($part)), $parts);
+        $normalised = array_map(
+            static fn ($part) => function_exists('mb_strtolower')
+                ? mb_strtolower(trim($part), 'UTF-8')
+                : strtolower(trim($part)),
+            $parts
+        );
         return implode(':', $normalised);
     }
 
